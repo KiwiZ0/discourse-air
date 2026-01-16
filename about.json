@@ -10,6 +10,9 @@
   "modifiers": {
     "serialize_topic_excerpts": true
   },
+   "assets": {
+    "variable-name": "assets/fond8-dark.png"
+  },
   "color_schemes": {
     "air-light": {
       "primary": "1c1c1c",
