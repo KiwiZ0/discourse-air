@@ -250,13 +250,9 @@ div.ac-wrap {
 
 html {
   body:not(.no-ember) {
-    background:
-      linear-gradient(
-        0deg,
-        rgb(var(--primary-rgb), 0.075) 0%,
-        rgb(var(--primary-rgb), 0.075) 100%
-      ),
-      linear-gradient(0deg, var(--secondary) 100%, var(--secondary) 100%);
+    background-image: url('images\\fond8-dark.png');
+    background-repeat: no-repeat;
+    background-position: center;
   }
 
   .background-container {
