@@ -609,3 +609,36 @@ html body #main-outlet {
 .title-voting {
   padding-left: 14px;
 }
+
+html body #main-outlet {
+  margin-top: 30px;
+  margin-bottom: 50px;
+  border-radius: 1em;
+  padding: 3em 3em 5%;
+  max-width: 1150px;
+  padding-bottom: 5% !important; // overriding inline style
+  box-shadow:
+    0 24px 40px rgb(0, 0, 0, 0.07),
+    0 10.8529px 24.1177px rgb(0, 0, 0, 0.0456112),
+    0 4.50776px 10.0172px rgb(0, 0, 0, 0.035),
+    0 1.63037px 3.62304px rgb(0, 0, 0, 0.0243888);
+  background-image: url('images\\fond8-dark.png');
+  background-repeat: repeat; // This will repeat the image
+
+  @media screen and (width <= 700px) {
+    padding: 1.5em;
+    margin-top: 0;
+  }
+
+  @media screen and (width <= 1120px) {
+    width: 80%;
+  }
+
+  @media screen and (width <= 1075px) {
+    width: 85%;
+  }
+
+  .archetype-regular & {
+    min-height: 500px;
+  }
+}
