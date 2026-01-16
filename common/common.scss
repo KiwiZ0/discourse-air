@@ -249,7 +249,7 @@ div.ac-wrap {
 }
 
 html {
-  body:not(.no-ember) {
+  body: {
     background-image: url('images\\fond8-dark.png');
     background-repeat: no-repeat;
     background-position: center;
