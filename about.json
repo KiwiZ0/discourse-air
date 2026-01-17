@@ -11,7 +11,7 @@
     "serialize_topic_excerpts": true
   },
    "assets": {
-    "variable-name": "assets/fond8-dark.png"
+    "wgbackground": "assets/fond8-dark.png"
   },
   "color_schemes": {
     "air-light": {
