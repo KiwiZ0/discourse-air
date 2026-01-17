@@ -266,11 +266,8 @@ html {
     left: 0;
     height: 100vh;
     width: 100vw;
-    background: linear-gradient(
-      90deg,
-      var(--tertiary-hover) 0%,
-      var(--tertiary) 100%
-    );
+    background-image: url('../assets/fond8-dark.png');
+    background-repeat: repeat; // This will repeat the image
     clip-path: ellipse(148% 70% at 91% -14%);
   }
 
