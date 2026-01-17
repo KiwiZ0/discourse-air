@@ -261,7 +261,7 @@ html {
   }
 
   .background-container {
-    background-image: url(--wgbackground);
+    background-image: url($wgbackground);
     background-repeat: repeat; // This will repeat the image
   }
 }
