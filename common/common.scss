@@ -255,9 +255,8 @@ div.ac-wrap {
 
 html {
   body: {
-    background-image: url('images\\fond8-dark.png');
-    background-repeat: repeat;
-    background-position: center;
+    background-image: url($wgbackground);
+    background-repeat: repeat; // This will repeat the image
   }
 
   .background-container {
