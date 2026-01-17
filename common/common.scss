@@ -261,7 +261,7 @@ html {
   }
 
   .background-container {
-    background-image: url('../assets/fond8-dark.png');
+    background-image: url($background);
     background-repeat: repeat; // This will repeat the image
   }
 }
