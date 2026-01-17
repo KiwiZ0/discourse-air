@@ -1,4 +1,4 @@
-background:
+wgbackground:
   type: upload
   default: ./assets/fond8-dark.jpg
   description: Background image for the site
