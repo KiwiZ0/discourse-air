@@ -264,10 +264,6 @@ html {
     background-image: url('../assets/fond8-dark.png');
     background-repeat: repeat; // This will repeat the image
   }
-
-  body.no-ember .background-container {
-    display: none;
-  }
 }
 
 html body #main-outlet {
