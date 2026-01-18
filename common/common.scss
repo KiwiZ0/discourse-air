@@ -1,5 +1,10 @@
 @use "lib/viewport";
 
+:root {
+  background-image: url($wgbackground);
+  background-repeat: repeat; // This will repeat the image
+}
+
 // custom search banner customizations
 .welcome-banner.--location-above-topic-content .custom-search-banner-wrap {
   color: var(--primary);
@@ -120,7 +125,7 @@
     border-top-left-radius: 0.125em;
     border-bottom-left-radius: 0.125em;
 
-    +.badge-category-bg {
+    + .badge-category-bg {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       border-top-right-radius: 0.125em;
@@ -255,24 +260,15 @@ html {
   }
 
   .background-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 100vw;
-    background: linear-gradient(90deg,
-        var(--tertiary-hover) 0%,
-        var(--tertiary) 100%);
-    clip-path: ellipse(148% 70% at 91% -14%);
+    background-image: url($wgbackground);
+    background-repeat: repeat; // This will repeat the image
   }
-
 }
 
 html body #main-outlet {
   margin-top: 30px;
   margin-bottom: 50px;
-  background-image: url($wgbackground);
-  background-repeat: repeat; // This will repeat the image
+  background: var(--secondary);
   border-radius: 1em;
   padding: 3em 3em 5%;
   max-width: 1150px;
@@ -283,16 +279,16 @@ html body #main-outlet {
     0 4.50776px 10.0172px rgb(0, 0, 0, 0.035),
     0 1.63037px 3.62304px rgb(0, 0, 0, 0.0243888);
 
-  @media screen and (width <=700px) {
+  @media screen and (width <= 700px) {
     padding: 1.5em;
     margin-top: 0;
   }
 
-  @media screen and (width <=1120px) {
+  @media screen and (width <= 1120px) {
     width: 80%;
   }
 
-  @media screen and (width <=1075px) {
+  @media screen and (width <= 1075px) {
     width: 85%;
   }
 
@@ -301,8 +297,8 @@ html body #main-outlet {
   }
 }
 
-.nav-pills:not(.user-nav)>li a.active,
-.nav-pills:not(.user-nav)>li>a {
+.nav-pills:not(.user-nav) > li a.active,
+.nav-pills:not(.user-nav) > li > a {
   border-radius: 0.5em;
 }
 
@@ -310,7 +306,6 @@ html body #main-outlet {
   &.before-topic-list-body-outlet {
     display: block;
   }
-
   background: var(--secondary);
   padding: 1em;
   border-radius: 8px;
@@ -346,7 +341,6 @@ html body #main-outlet {
       display: flex;
       border-bottom: none;
     }
-
     display: contents;
 
     .topic-list-data.default {
@@ -576,9 +570,11 @@ html body #main-outlet {
   }
 
   &::before {
-    background: linear-gradient(90deg,
-        var(--tertiary-hover) 0%,
-        var(--tertiary) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--tertiary-hover) 0%,
+      var(--tertiary) 100%
+    );
     clip-path: ellipse(148% 70% at 91% -14%);
     content: "";
     width: 100%;
@@ -593,7 +589,7 @@ html body #main-outlet {
   border-radius: 0.5em;
 }
 
-.topic-list .main-link.focused+.posters {
+.topic-list .main-link.focused + .posters {
   box-shadow: inset 3px 0 0 var(--tertiary);
 }
 
@@ -620,16 +616,16 @@ html body #main-outlet {
   background-image: url($wgbackground);
   background-repeat: repeat; // This will repeat the image
 
-  @media screen and (width <=700px) {
+  @media screen and (width <= 700px) {
     padding: 1.5em;
     margin-top: 0;
   }
 
-  @media screen and (width <=1120px) {
+  @media screen and (width <= 1120px) {
     width: 80%;
   }
 
-  @media screen and (width <=1075px) {
+  @media screen and (width <= 1075px) {
     width: 85%;
   }
 
