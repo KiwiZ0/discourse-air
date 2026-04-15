@@ -181,6 +181,18 @@
   background-color: var(--secondary);
 }
 
+body.categories-list,
+body.category {
+  .category-list.with-topics,
+  .category-boxes.with-logos {
+    display: none !important;
+  }
+
+  .custom-category-boxes-container {
+    display: block !important;
+  }
+}
+
 input[type="text"],
 input[type="password"],
 input[type="datetime"],
