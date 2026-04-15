@@ -15,6 +15,7 @@ const EDITABLE_FIELD_SELECTOR = [
 let intendedScrollY = 0;
 let originalHTMLElementFocus;
 let allowNextEditableFocus = false;
+let manualEditableFocusUnlocked = false;
 
 function isFormStepRoute(url = window.location.pathname) {
   return FORM_STEP_ROUTE_PATTERN.test(url || "");
@@ -25,7 +26,11 @@ function isEditableFieldOrChild(element) {
 }
 
 function shouldPreventComposerFocus() {
-  return isFormStepRoute() && !allowNextEditableFocus;
+  return (
+    isFormStepRoute() &&
+    !manualEditableFocusUnlocked &&
+    !allowNextEditableFocus
+  );
 }
 
 function isBlockedAutofocusTarget(field) {
@@ -106,22 +111,25 @@ export default apiInitializer((api) => {
   document.addEventListener(
     "focusin",
     (event) => {
+      if (!isBlockedAutofocusTarget(event.target)) {
+        allowNextEditableFocus = false;
+        return;
+      }
+
+      if (isFormStepRoute() && allowNextEditableFocus) {
+        manualEditableFocusUnlocked = true;
+        allowNextEditableFocus = false;
+        return;
+      }
+
       if (
         !shouldPreventComposerFocus() ||
-        !isBlockedAutofocusTarget(event.target)
+        manualEditableFocusUnlocked
       ) {
         return;
       }
 
       blurComposerField(event.target);
-    },
-    true
-  );
-
-  document.addEventListener(
-    "focusout",
-    () => {
-      allowNextEditableFocus = false;
     },
     true
   );
@@ -138,6 +146,7 @@ export default apiInitializer((api) => {
 
   api.onPageChange((url) => {
     allowNextEditableFocus = false;
+    manualEditableFocusUnlocked = false;
 
     if (!isFormStepRoute(url)) {
       return;
@@ -150,6 +159,7 @@ export default apiInitializer((api) => {
 
   if (isFormStepRoute()) {
     allowNextEditableFocus = false;
+    manualEditableFocusUnlocked = false;
     intendedScrollY = window.scrollY;
     removeAutofocusAttributes();
     blurActiveComposerField();
