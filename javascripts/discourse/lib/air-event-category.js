@@ -1,12 +1,32 @@
 import Category from "discourse/models/category";
 
 export const STORAGE_KEY = "discourse-air-upcoming-events-category-id";
+const ALLOWED_EVENT_CATEGORY_SLUGS = new Set([
+  "events-pvp",
+  "events-pvm",
+  "non-runescape",
+]);
+
+export function isAllowedEventCategory(category) {
+  const categorySlug = String(category?.slug || "").trim().toLowerCase();
+  const fullCategorySlug = String(category?.fullSlug || "")
+    .trim()
+    .toLowerCase();
+
+  return (
+    ALLOWED_EVENT_CATEGORY_SLUGS.has(categorySlug) ||
+    ALLOWED_EVENT_CATEGORY_SLUGS.has(fullCategorySlug)
+  );
+}
 
 export function getCurrentCategory(router) {
   let route = router?.currentRoute;
 
   while (route) {
-    if (route.attributes?.category) {
+    if (
+      route.attributes?.category &&
+      isAllowedEventCategory(route.attributes.category)
+    ) {
       return route.attributes.category;
     }
 
@@ -22,7 +42,9 @@ export function canCreateTopic(category) {
 
 export function getCreatableCategories(site) {
   const categories = site?.categoriesList || site?.categories || [];
-  return categories.filter((category) => canCreateTopic(category));
+  return categories.filter(
+    (category) => canCreateTopic(category) && isAllowedEventCategory(category)
+  );
 }
 
 export function getStoredCategoryId() {
@@ -45,7 +67,8 @@ export function getDefaultComposerCategory(siteSettings) {
     return null;
   }
 
-  return Category.findById(defaultCategoryId) || { id: defaultCategoryId };
+  const category = Category.findById(defaultCategoryId);
+  return isAllowedEventCategory(category) ? category : null;
 }
 
 export function getSelectedCategory(site) {
@@ -81,7 +104,8 @@ export function getCreateTopicTargetCategory({ router, site, siteSettings }) {
 
   if (
     siteSettings?.default_subcategory_on_read_only_category &&
-    category?.subcategoryWithCreateTopicPermission
+    category?.subcategoryWithCreateTopicPermission &&
+    isAllowedEventCategory(category.subcategoryWithCreateTopicPermission)
   ) {
     return category.subcategoryWithCreateTopicPermission;
   }
