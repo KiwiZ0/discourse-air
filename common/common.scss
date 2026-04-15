@@ -312,6 +312,186 @@ html body #main-outlet {
   margin-bottom: 1em;
 }
 
+.air-calendar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--primary-low);
+
+  @media screen and (width <= 700px) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+.air-calendar-actions--toolbar {
+  margin-bottom: 0;
+  margin-left: 0.5rem;
+  padding-bottom: 0;
+  border-bottom: 0;
+  align-items: center;
+  gap: 0.5rem;
+
+  .air-calendar-actions__intro {
+    display: none;
+  }
+
+  @media screen and (width <= 700px) {
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-left: 0;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+}
+
+.air-calendar-actions__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.air-calendar-actions__title,
+.air-calendar-actions__helper {
+  margin: 0;
+}
+
+.air-calendar-actions__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.air-calendar-actions__helper {
+  font-size: 0.92rem;
+  color: var(--primary-medium);
+}
+
+.air-calendar-create-event-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.75rem 1.15rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--tertiary);
+  color: var(--secondary);
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 10px 20px rgb(0 0 0 / 0.08);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--tertiary);
+    color: var(--secondary);
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgb(0 0 0 / 0.12);
+  }
+
+  &:disabled,
+  &.is-loading {
+    cursor: wait;
+    opacity: 0.75;
+    transform: none;
+  }
+
+  @media screen and (width <= 700px) {
+    width: 100%;
+  }
+}
+
+.air-calendar-actions--toolbar .air-calendar-create-event-btn {
+  min-height: 36px;
+  padding: 0.625rem 0.9rem;
+  box-shadow: none;
+
+  @media screen and (width <= 700px) {
+    width: 100%;
+    min-height: 42px;
+  }
+}
+
+.air-event-category-field__select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--primary-low);
+  border-radius: 0.75rem;
+  background: var(--secondary);
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.air-event-builder-error {
+  margin-bottom: 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--danger);
+  border-radius: 0.75rem;
+  background: var(--danger-low);
+  color: var(--danger);
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.post-event-builder-modal {
+  .event-field.location,
+  .event-field.max-attendees,
+  .event-field.timezone,
+  .event-field.show-local-time,
+  .event-field.reminders,
+  .event-field.minimal-event,
+  .event-field.allow-chat,
+  .air-event-field--hidden {
+    display: none;
+  }
+}
+
+@media screen and (width <= 700px) {
+  .discourse-post-event-upcoming-events .fc-header-toolbar {
+    gap: 0.75rem;
+  }
+
+  .discourse-post-event-upcoming-events .fc-header-toolbar,
+  .discourse-post-event-upcoming-events .fc-header-toolbar .fc-toolbar-chunk {
+    flex-wrap: wrap;
+  }
+
+  .discourse-post-event-upcoming-events
+    .fc-header-toolbar
+    .fc-toolbar-chunk:last-child {
+    width: 100%;
+  }
+
+  .discourse-post-event-upcoming-events
+    .fc-header-toolbar
+    .fc-toolbar-chunk:last-child
+    > * {
+    width: 100%;
+  }
+}
+
+.air-calendar-create-event-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.18);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 .discourse-post-event-upcoming-events {
   background: var(--secondary);
   border-radius: 8px;
