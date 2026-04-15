@@ -2,8 +2,8 @@ import Category from "discourse/models/category";
 
 export const STORAGE_KEY = "discourse-air-upcoming-events-category-id";
 const ALLOWED_EVENT_CATEGORY_SLUGS = new Set([
-  "events-pvp",
-  "events-pvm",
+  "cal-pvp",
+  "cal-pvm",
   "non-runescape",
 ]);
 
