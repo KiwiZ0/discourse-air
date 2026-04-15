@@ -603,6 +603,50 @@ html body #main-outlet {
         }
       }
 
+      &.pinned,
+      &.pinned-globally {
+        border-color: rgb(var(--tertiary-rgb), 0.35);
+        background-image: linear-gradient(
+          90deg,
+          rgb(var(--tertiary-rgb), 0.08),
+          rgb(var(--tertiary-rgb), 0.03) 6rem,
+          transparent 12rem
+        );
+        box-shadow:
+          0 0 0 1px rgb(var(--tertiary-rgb), 0.08),
+          0 0 10px rgb(0, 0, 0, 0.08);
+
+        &::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 0;
+          width: 4px;
+          background: var(--highlight);
+        }
+
+        a.title:not(.badge-notification) {
+          font-weight: 600;
+        }
+
+        .topic-statuses .d-icon-thumbtack,
+        .topic-status .d-icon-thumbtack {
+          color: var(--highlight);
+        }
+
+        &.visited {
+          border-color: rgb(var(--tertiary-rgb), 0.25);
+        }
+
+        &:hover {
+          border-color: rgb(var(--tertiary-rgb), 0.45);
+          box-shadow:
+            0 0 0 1px rgb(var(--tertiary-rgb), 0.12),
+            0 0 14px rgb(0, 0, 0, 0.12);
+        }
+      }
+
       .topic-list-data.main-link {
         width: 63%;
         order: 2;
