@@ -382,7 +382,17 @@ html body #main-outlet {
   color: var(--primary-medium);
 }
 
-.air-calendar-create-event-btn {
+.air-calendar-create-event-btn,
+.discourse-post-event-upcoming-events
+  .fc
+  .fc-button.air-calendar-create-event-btn {
+  --fc-button-text-color: var(--secondary);
+  --fc-button-bg-color: var(--tertiary);
+  --fc-button-border-color: transparent;
+  --fc-button-hover-bg-color: var(--tertiary);
+  --fc-button-hover-border-color: transparent;
+  --fc-button-active-bg-color: var(--tertiary);
+  --fc-button-active-border-color: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -403,9 +413,10 @@ html body #main-outlet {
     opacity 0.15s ease;
 
   &:hover,
+  &:focus,
   &:focus-visible {
-    background: var(--tertiary);
-    color: var(--secondary);
+    background: var(--tertiary) !important;
+    color: var(--secondary) !important;
     transform: translateY(-1px);
     box-shadow: 0 14px 28px rgb(0 0 0 / 0.12);
   }
