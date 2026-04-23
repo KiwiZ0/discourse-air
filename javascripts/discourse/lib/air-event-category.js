@@ -4,7 +4,7 @@ export const STORAGE_KEY = "discourse-air-upcoming-events-category-id";
 const ALLOWED_EVENT_CATEGORY_PATHS = [
   "events/cal-pvp",
   "events/cal-pvm",
-  "non-runescape",
+  "events/non-runescape",
 ];
 const ALLOWED_EVENT_CATEGORY_PATH_SET = new Set(ALLOWED_EVENT_CATEGORY_PATHS);
 
