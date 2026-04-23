@@ -1,22 +1,28 @@
 import Category from "discourse/models/category";
 
 export const STORAGE_KEY = "discourse-air-upcoming-events-category-id";
-const ALLOWED_EVENT_CATEGORY_SLUGS = new Set([
-  "cal-pvp",
-  "cal-pvm",
+const ALLOWED_EVENT_CATEGORY_PATHS = [
+  "events/cal-pvp",
+  "events/cal-pvm",
   "non-runescape",
-]);
+];
+const ALLOWED_EVENT_CATEGORY_PATH_SET = new Set(ALLOWED_EVENT_CATEGORY_PATHS);
 
-export function isAllowedEventCategory(category) {
-  const categorySlug = String(category?.slug || "").trim().toLowerCase();
-  const fullCategorySlug = String(category?.fullSlug || "")
+let eventCategoriesPromise;
+let loadedEventCategories;
+
+function normalizeSlug(slug) {
+  return String(slug || "")
     .trim()
     .toLowerCase();
+}
 
-  return (
-    ALLOWED_EVENT_CATEGORY_SLUGS.has(categorySlug) ||
-    ALLOWED_EVENT_CATEGORY_SLUGS.has(fullCategorySlug)
-  );
+function categorySlugPath(category) {
+  return normalizeSlug(Category.slugFor(category));
+}
+
+export function isAllowedEventCategory(category) {
+  return ALLOWED_EVENT_CATEGORY_PATH_SET.has(categorySlugPath(category));
 }
 
 export function getCurrentCategory(router) {
@@ -40,11 +46,69 @@ export function canCreateTopic(category) {
   return category?.canCreateTopic || category?.can_create_topic;
 }
 
+function filterCreatableEventCategories(categories) {
+  return uniqueCategories(
+    categories.filter(
+      (category) => canCreateTopic(category) && isAllowedEventCategory(category)
+    )
+  );
+}
+
+function uniqueCategories(categories) {
+  const seen = new Set();
+
+  return categories.filter((category) => {
+    if (!category?.id || seen.has(category.id)) {
+      return false;
+    }
+
+    seen.add(category.id);
+    return true;
+  });
+}
+
 export function getCreatableCategories(site) {
   const categories = site?.categoriesList || site?.categories || [];
-  return categories.filter(
-    (category) => canCreateTopic(category) && isAllowedEventCategory(category)
-  );
+  return filterCreatableEventCategories(categories);
+}
+
+async function findAllowedCategoryByPath(path) {
+  const category = await Category.asyncFindBySlugPath(path).catch(() => null);
+
+  if (category && isAllowedEventCategory(category)) {
+    return category;
+  }
+
+  return null;
+}
+
+export async function ensureEventCategories(site) {
+  const loadedCategories = getCreatableCategories(site);
+
+  if (loadedCategories.length >= ALLOWED_EVENT_CATEGORY_PATHS.length) {
+    return loadedCategories;
+  }
+
+  if (!loadedEventCategories) {
+    eventCategoriesPromise ||= Promise.all(
+      ALLOWED_EVENT_CATEGORY_PATHS.map((path) => findAllowedCategoryByPath(path))
+    )
+      .then((categories) => {
+        loadedEventCategories = uniqueCategories(categories.filter(Boolean));
+        return loadedEventCategories;
+      })
+      .finally(() => {
+        eventCategoriesPromise = null;
+      });
+  }
+
+  const fetchedCategories =
+    loadedEventCategories || (await eventCategoriesPromise);
+
+  return filterCreatableEventCategories([
+    ...loadedCategories,
+    ...fetchedCategories,
+  ]);
 }
 
 export function getStoredCategoryId() {
@@ -61,7 +125,10 @@ export function setStoredCategoryId(categoryId) {
 }
 
 export function getDefaultComposerCategory(siteSettings) {
-  const defaultCategoryId = parseInt(siteSettings?.default_composer_category, 10);
+  const defaultCategoryId = parseInt(
+    siteSettings?.default_composer_category,
+    10
+  );
 
   if (!defaultCategoryId || defaultCategoryId <= 0) {
     return null;
@@ -71,14 +138,17 @@ export function getDefaultComposerCategory(siteSettings) {
   return isAllowedEventCategory(category) ? category : null;
 }
 
-export function getSelectedCategory(site) {
+export function getSelectedCategory(
+  site,
+  categories = getCreatableCategories(site)
+) {
   const storedCategoryId = parseInt(getStoredCategoryId(), 10);
 
   if (!storedCategoryId) {
     return null;
   }
 
-  const selectedCategory = getCreatableCategories(site).find(
+  const selectedCategory = categories.find(
     (category) => category.id === storedCategoryId
   );
 
@@ -90,8 +160,11 @@ export function getSelectedCategory(site) {
   return null;
 }
 
-export function getCreateTopicTargetCategory({ router, site, siteSettings }) {
-  const selectedCategory = getSelectedCategory(site);
+export function getCreateTopicTargetCategory(
+  { router, site, siteSettings },
+  categories = getCreatableCategories(site)
+) {
+  const selectedCategory = getSelectedCategory(site, categories);
   const category = getCurrentCategory(router);
 
   if (selectedCategory?.id) {
@@ -111,4 +184,10 @@ export function getCreateTopicTargetCategory({ router, site, siteSettings }) {
   }
 
   return getDefaultComposerCategory(siteSettings);
+}
+
+export async function getCreateTopicTargetCategoryAsync(context) {
+  const categories = await ensureEventCategories(context.site);
+
+  return getCreateTopicTargetCategory(context, categories);
 }

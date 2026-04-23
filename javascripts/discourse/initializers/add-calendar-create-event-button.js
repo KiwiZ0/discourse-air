@@ -1,12 +1,10 @@
 import { ajax } from "discourse/lib/ajax";
+import { apiInitializer } from "discourse/lib/api";
+import DiscourseURL from "discourse/lib/url";
+import PostEventBuilder from "discourse/plugins/discourse-calendar/discourse/components/modal/post-event-builder";
 import { buildParams } from "discourse/plugins/discourse-calendar/discourse/lib/raw-event-helper";
 import DiscoursePostEventEvent from "discourse/plugins/discourse-calendar/discourse/models/discourse-post-event-event";
-import PostEventBuilder from "discourse/plugins/discourse-calendar/discourse/components/modal/post-event-builder";
-import DiscourseURL from "discourse/lib/url";
-import { apiInitializer } from "discourse/lib/api";
-import {
-  getCreateTopicTargetCategory,
-} from "../lib/air-event-category";
+import { getCreateTopicTargetCategoryAsync } from "../lib/air-event-category";
 
 const UPCOMING_EVENTS_SELECTOR = ".discourse-post-event-upcoming-events";
 const ACTIONS_SELECTOR = ".air-calendar-actions";
@@ -90,15 +88,17 @@ function buildCreatedTopicUrl(result) {
   return null;
 }
 
-async function createTopicFromEvent(api, { body, title }) {
-  const category = getCreateTopicTargetCategory(getEventCategoryContext(api));
+async function createTopicFromEvent(api, { body, title, category }) {
+  const targetCategory =
+    category ||
+    (await getCreateTopicTargetCategoryAsync(getEventCategoryContext(api)));
   const payload = {
     raw: body,
     title,
   };
 
-  if (category?.id) {
-    payload.category = category.id;
+  if (targetCategory?.id) {
+    payload.category = targetCategory.id;
   }
 
   const result = await ajax("/posts", {
@@ -163,7 +163,9 @@ function showEventBuilderError(modal, message) {
 }
 
 function setEventBuilderSubmitting(modal, isSubmitting) {
-  const primaryButton = modal?.querySelector(EVENT_BUILDER_PRIMARY_BUTTON_SELECTOR);
+  const primaryButton = modal?.querySelector(
+    EVENT_BUILDER_PRIMARY_BUTTON_SELECTOR
+  );
 
   if (!primaryButton) {
     return;
@@ -196,14 +198,14 @@ function attachEventBuilderSubmitHandler(api, event) {
 
       primaryButton.addEventListener(
         "click",
-        (clickEvent) => {
+        async (clickEvent) => {
           clickEvent.preventDefault();
           clickEvent.stopPropagation();
           clickEvent.stopImmediatePropagation();
 
-          const { siteSettings } = getEventCategoryContext(api);
+          const categoryContext = getEventCategoryContext(api);
+          const { siteSettings } = categoryContext;
           const title = event.name?.trim() || "";
-          const category = getCreateTopicTargetCategory(getEventCategoryContext(api));
 
           clearEventBuilderError(modal);
 
@@ -212,8 +214,14 @@ function attachEventBuilderSubmitHandler(api, event) {
             return;
           }
 
+          setEventBuilderSubmitting(modal, true);
+
+          const category =
+            await getCreateTopicTargetCategoryAsync(categoryContext);
+
           if (!category?.id && !siteSettings?.allow_uncategorized_topics) {
             showEventBuilderError(modal, CATEGORY_REQUIRED_MESSAGE);
+            setEventBuilderSubmitting(modal, false);
             return;
           }
 
@@ -223,19 +231,17 @@ function attachEventBuilderSubmitHandler(api, event) {
             body = buildEventMarkup(event, siteSettings);
           } catch {
             showEventBuilderError(modal, CREATE_EVENT_FAILURE_MESSAGE);
+            setEventBuilderSubmitting(modal, false);
             return;
           }
 
-          setEventBuilderSubmitting(modal, true);
-
-          createTopicFromEvent(api, { body, title })
-            .catch((error) => {
-              showEventBuilderError(
-                modal,
-                extractErrorMessage(error) || CREATE_EVENT_FAILURE_MESSAGE
-              );
-              setEventBuilderSubmitting(modal, false);
-            });
+          createTopicFromEvent(api, { body, title, category }).catch((error) => {
+            showEventBuilderError(
+              modal,
+              extractErrorMessage(error) || CREATE_EVENT_FAILURE_MESSAGE
+            );
+            setEventBuilderSubmitting(modal, false);
+          });
         },
         { capture: true }
       );
@@ -315,6 +321,13 @@ function buildCalendarActions() {
   return { wrapper, button };
 }
 
+function insertActionsInToolbar(toolbar, wrapper) {
+  const toolbarChunk = toolbar.querySelector(TOOLBAR_CHUNK_SELECTOR) || toolbar;
+
+  wrapper.classList.add("air-calendar-actions--toolbar");
+  toolbarChunk.prepend(wrapper);
+}
+
 async function handleCreateEventClick(api, button) {
   const defaultLabel = button.innerHTML;
 
@@ -363,10 +376,7 @@ function injectButton(api) {
   const { wrapper, button } = buildCalendarActions();
 
   if (toolbar) {
-    const toolbarChunk =
-      toolbar.querySelector(TOOLBAR_CHUNK_SELECTOR) || toolbar;
-    wrapper.classList.add("air-calendar-actions--toolbar");
-    toolbarChunk.append(wrapper);
+    insertActionsInToolbar(toolbar, wrapper);
   } else {
     upcomingEvents.prepend(wrapper);
   }

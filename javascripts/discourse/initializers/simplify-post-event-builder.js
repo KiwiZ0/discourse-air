@@ -1,6 +1,6 @@
 import { apiInitializer } from "discourse/lib/api";
 import {
-  getCreatableCategories,
+  ensureEventCategories,
   getCurrentCategory,
   getDefaultComposerCategory,
   getSelectedCategory,
@@ -13,31 +13,36 @@ const HIDDEN_FIELD_CLASS = "air-event-field--hidden";
 const CATEGORY_FIELD_SELECTOR = ".air-event-category-field";
 const NAME_INPUT_SELECTOR = ".event-field.name input";
 const NAME_LABEL_SELECTOR = ".event-field.name .label";
+const ENHANCEMENT_RETRY_DELAY_MS = 250;
+const ENHANCEMENT_MAX_RETRIES = 20;
 
-function buildCategoryField(api) {
+let pendingEnhancementRetry;
+let enhancementRetryCount = 0;
+let pendingCategoryFieldEnhancement;
+
+function getEventCategoryContext(api) {
   const router = api.container.lookup("service:router");
   const site = api.container.lookup("service:site");
   const siteSettings = api.container.lookup("service:site-settings");
-  const categories = getCreatableCategories(site);
 
-  if (!categories.length) {
-    return null;
-  }
+  return { router, site, siteSettings };
+}
 
-  const selectedCategory =
-    getSelectedCategory(site) ||
+function getInitialSelectedCategory(
+  { router, site, siteSettings },
+  categories
+) {
+  return (
+    getSelectedCategory(site, categories) ||
     getCurrentCategory(router) ||
-    getDefaultComposerCategory(siteSettings);
+    getDefaultComposerCategory(siteSettings)
+  );
+}
 
-  const field = document.createElement("div");
-  field.className = "event-field air-event-category-field";
+function populateCategorySelect(select, categories, selectedCategory) {
+  const previousValue = select.value;
 
-  const label = document.createElement("span");
-  label.className = "label";
-  label.textContent = "Category";
-
-  const select = document.createElement("select");
-  select.className = "air-event-category-field__select";
+  select.replaceChildren();
 
   const placeholder = document.createElement("option");
   placeholder.value = "";
@@ -51,10 +56,35 @@ function buildCategoryField(api) {
     select.append(option);
   });
 
-  if (selectedCategory?.id) {
-    select.value = String(selectedCategory.id);
-    setStoredCategoryId(selectedCategory.id);
+  let selectedValue = previousValue;
+
+  if (
+    selectedCategory?.id &&
+    categories.some((category) => category.id === selectedCategory.id)
+  ) {
+    selectedValue = String(selectedCategory.id);
   }
+
+  if (!categories.some((category) => String(category.id) === selectedValue)) {
+    selectedValue = "";
+  }
+
+  select.value = selectedValue;
+  setStoredCategoryId(selectedValue);
+}
+
+function buildCategoryField(categories, selectedCategory) {
+  const field = document.createElement("div");
+  field.className = "event-field air-event-category-field";
+
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = "Category";
+
+  const select = document.createElement("select");
+  select.className = "air-event-category-field__select";
+
+  populateCategorySelect(select, categories, selectedCategory);
 
   const updateCategory = (event) => {
     setStoredCategoryId(event.target.value);
@@ -68,18 +98,34 @@ function buildCategoryField(api) {
   return field;
 }
 
-function injectCategoryField(api) {
+async function injectOrUpdateCategoryField(api) {
+  const { router, site, siteSettings } = getEventCategoryContext(api);
+  const categories = await ensureEventCategories(site);
+
   const modal = document.querySelector(EVENT_BUILDER_SELECTOR);
 
-  if (!modal || modal.querySelector(CATEGORY_FIELD_SELECTOR)) {
-    return;
+  if (!modal) {
+    return false;
   }
 
-  const categoryField = buildCategoryField(api);
-
-  if (!categoryField) {
-    return;
+  if (!categories.length) {
+    return false;
   }
+
+  const selectedCategory = getInitialSelectedCategory(
+    { router, site, siteSettings },
+    categories
+  );
+  const existingSelect = modal.querySelector(
+    `${CATEGORY_FIELD_SELECTOR} select`
+  );
+
+  if (existingSelect) {
+    populateCategorySelect(existingSelect, categories, selectedCategory);
+    return true;
+  }
+
+  const categoryField = buildCategoryField(categories, selectedCategory);
 
   const allDayField = modal.querySelector(".event-field.all-day");
   const nameField = modal.querySelector(".event-field.name");
@@ -87,15 +133,26 @@ function injectCategoryField(api) {
 
   if (allDayField) {
     allDayField.insertAdjacentElement("afterend", categoryField);
-    return;
+    return true;
   }
 
   if (nameField?.parentElement) {
     nameField.parentElement.insertBefore(categoryField, nameField);
-    return;
+    return true;
   }
 
   firstField?.parentElement?.insertBefore(categoryField, firstField);
+  return Boolean(firstField);
+}
+
+function enhanceCategoryField(api) {
+  pendingCategoryFieldEnhancement ||= injectOrUpdateCategoryField(api).finally(
+    () => {
+      pendingCategoryFieldEnhancement = null;
+    }
+  );
+
+  return pendingCategoryFieldEnhancement;
 }
 
 function updateNameFieldCopy() {
@@ -141,6 +198,58 @@ function hideStatusFields() {
   privateInviteesField?.classList.add(HIDDEN_FIELD_CLASS);
 }
 
+function clearPendingEnhancementRetry() {
+  if (!pendingEnhancementRetry) {
+    return;
+  }
+
+  clearTimeout(pendingEnhancementRetry);
+  pendingEnhancementRetry = null;
+}
+
+function scheduleEventBuilderEnhancements(api, { resetRetries = false } = {}) {
+  const modal = document.querySelector(EVENT_BUILDER_SELECTOR);
+
+  if (!modal) {
+    enhancementRetryCount = 0;
+    clearPendingEnhancementRetry();
+    return;
+  }
+
+  if (resetRetries) {
+    enhancementRetryCount = 0;
+    clearPendingEnhancementRetry();
+  }
+
+  updateNameFieldCopy();
+  hideStatusFields();
+
+  enhanceCategoryField(api).then((categoryFieldReady) => {
+    if (!document.querySelector(EVENT_BUILDER_SELECTOR)) {
+      return;
+    }
+
+    if (categoryFieldReady) {
+      enhancementRetryCount = 0;
+      clearPendingEnhancementRetry();
+      return;
+    }
+
+    if (
+      pendingEnhancementRetry ||
+      enhancementRetryCount >= ENHANCEMENT_MAX_RETRIES
+    ) {
+      return;
+    }
+
+    enhancementRetryCount += 1;
+    pendingEnhancementRetry = setTimeout(() => {
+      pendingEnhancementRetry = null;
+      scheduleEventBuilderEnhancements(api);
+    }, ENHANCEMENT_RETRY_DELAY_MS);
+  });
+}
+
 export default apiInitializer((api) => {
   const observer = new MutationObserver((mutations) => {
     const modalWasAdded = mutations.some((mutation) =>
@@ -152,11 +261,14 @@ export default apiInitializer((api) => {
       )
     );
 
-    if (modalWasAdded) {
-      injectCategoryField(api);
-      updateNameFieldCopy();
-      hideStatusFields();
+    if (modalWasAdded || document.querySelector(EVENT_BUILDER_SELECTOR)) {
+      scheduleEventBuilderEnhancements(api, {
+        resetRetries: modalWasAdded,
+      });
+      return;
     }
+
+    clearPendingEnhancementRetry();
   });
 
   observer.observe(document.body, {
@@ -165,8 +277,8 @@ export default apiInitializer((api) => {
   });
 
   api.onPageChange(() => {
-    injectCategoryField(api);
-    updateNameFieldCopy();
-    hideStatusFields();
+    scheduleEventBuilderEnhancements(api, { resetRetries: true });
   });
+
+  scheduleEventBuilderEnhancements(api, { resetRetries: true });
 });
