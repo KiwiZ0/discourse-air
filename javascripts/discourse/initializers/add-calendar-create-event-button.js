@@ -321,6 +321,13 @@ function buildCalendarActions() {
   return { wrapper, button };
 }
 
+function insertActionsInToolbar(toolbar, wrapper) {
+  const toolbarChunk = toolbar.querySelector(TOOLBAR_CHUNK_SELECTOR) || toolbar;
+
+  wrapper.classList.add("air-calendar-actions--toolbar");
+  toolbarChunk.prepend(wrapper);
+}
+
 async function handleCreateEventClick(api, button) {
   const defaultLabel = button.innerHTML;
 
@@ -369,10 +376,7 @@ function injectButton(api) {
   const { wrapper, button } = buildCalendarActions();
 
   if (toolbar) {
-    const toolbarChunk =
-      toolbar.querySelector(TOOLBAR_CHUNK_SELECTOR) || toolbar;
-    wrapper.classList.add("air-calendar-actions--toolbar");
-    toolbarChunk.append(wrapper);
+    insertActionsInToolbar(toolbar, wrapper);
   } else {
     upcomingEvents.prepend(wrapper);
   }
